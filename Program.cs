@@ -34,7 +34,7 @@ namespace CouchbaseJoinBug
             routes.Add(new RouteDTO()
             {
                 RouteId = "route1",
-                Airline = "airline1",
+                Airline = "airline2",
                 SourceAirport = "LYS",
                 DestinationAirport = "LAX"
             });
@@ -50,12 +50,13 @@ namespace CouchbaseJoinBug
             routes.Add(new RouteDTO()
             {
                 RouteId = "route1",
-                Airline = "airline1",
+                Airline = "airline2",
                 SourceAirport = "RIX",
                 DestinationAirport = "LYS"
             });
 
             // Execute Query with join
+            // Inspired by https://docs.couchbase.com/couchbase-lite/current/csharp/querybuilder.html#lbl-join
 
             using (var query = QueryBuilder.Select(
                     SelectResult.Expression(Expression.Property(nameof(AirlineDTO.Name)).From(Airlines.ALIAS)),
