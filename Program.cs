@@ -20,7 +20,7 @@ namespace CouchbaseJoinBug
             db.Save(new ModelDTO()
             {
                 Id = modelId,
-                Label = "Model 1",
+                Label2 = "Model 1",
                 Disabled = false
             }.ToMutableDocument(modelId));
 
@@ -41,9 +41,9 @@ namespace CouchbaseJoinBug
             using (var query = QueryBuilder
                 .Select(
                     SelectResult.Expression(Expression.Property(nameof(MachineDTO.Id)).From(MACHINES)),
-                    SelectResult.Expression(Expression.Property(nameof(MachineDTO.Label)).From(MACHINES)).As("Label"), // removing alias fix the issue
+                    SelectResult.Expression(Expression.Property(nameof(MachineDTO.Label)).From(MACHINES)).As("Label2"), // removing alias fix the issue
                     SelectResult.Expression(Expression.Property(nameof(MachineDTO.ModelId)).From(MACHINES)),
-                    SelectResult.Expression(Expression.Property(nameof(ModelDTO.Label)).From(MODELS)).As("ModelLabel")
+                    SelectResult.Expression(Expression.Property(nameof(ModelDTO.Label2)).From(MODELS)).As("ModelLabel")
                 )
                 .From(DataSource.Database(db).As(MACHINES))
                 .Join(
