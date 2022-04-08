@@ -1,5 +1,7 @@
 ﻿using System;
 using Couchbase.Lite.Query;
+using Monitoring.Context.Core;
+using Monitoring.Context.Core.DTOs;
 
 namespace CouchbaseJoinBug
 {
@@ -7,79 +9,68 @@ namespace CouchbaseJoinBug
     {
         static void Main(string[] args)
         {
-            var mydb = new MyDatabase();
+            var mydb = new ApplicationContext(
+                new Couchbase.Lite.Database("Test", new Couchbase.Lite.DatabaseConfiguration())
+            );
             var db = mydb.Database;
 
-            var airlines = new Airlines(db);
-            var routes = new Routes(db);
+            var modelId = Guid.NewGuid().ToString();
+            var machineId = Guid.NewGuid().ToString();
 
-            // Initializing airlines
-
-            var airline1ID = airlines.Add(new AirlineDTO()
+            db.Save(new ModelDTO()
             {
-                Id = "airline1",
-                Name = "My First Airline",
-                CallSign = "CYF"
-            });
+                Id = modelId,
+                Label = "Model 1",
+                Disabled = false
+            }.ToMutableDocument(modelId));
 
-            var airline2ID = airlines.Add(new AirlineDTO()
+            db.Save(new MachineDTO()
             {
-                Id = "airline2",
-                Name = "My Second Airline",
-                CallSign = "BGB"
-            });
-
-            // Initializing routes
-
-            routes.Add(new RouteDTO()
-            {
-                Id = "route1",
-                AirlineId = airline2ID,
-                SourceAirport = "LYS",
-                DestinationAirport = "LAX"
-            });
-
-            routes.Add(new RouteDTO()
-            {
-                Id = "route2",
-                AirlineId = airline1ID,
-                SourceAirport = "RIX",
-                DestinationAirport = "LAX"
-            });
-
-            routes.Add(new RouteDTO()
-            {
-                Id = "route3",
-                AirlineId = airline2ID,
-                SourceAirport = "RIX",
-                DestinationAirport = "LYS"
-            });
+                Id = machineId,
+                Label = "Machine 1",
+                ModelId = modelId,
+                Disabled = false
+            }.ToMutableDocument(machineId));
 
             // Execute Query with join
             // Inspired by https://docs.couchbase.com/couchbase-lite/current/csharp/querybuilder.html#lbl-join
 
-            using (var query = QueryBuilder.Select(
-                    SelectResult.Expression(Expression.Property(nameof(AirlineDTO.Name)).From(Airlines.ALIAS)),
-                    SelectResult.Expression(Expression.Property(nameof(AirlineDTO.CallSign)).From(Airlines.ALIAS)),
-                    SelectResult.Expression(Expression.Property(nameof(RouteDTO.SourceAirport)).From(Routes.ALIAS)),
-                    SelectResult.Expression(Expression.Property(nameof(RouteDTO.DestinationAirport)).From(Routes.ALIAS)),
-                    SelectResult.Expression(Expression.Property(nameof(RouteDTO.AirlineId)).From(Routes.ALIAS))
+            const string MACHINES = "machines";
+            const string MODELS = "models";
+            
+            using (var query = QueryBuilder
+                .Select(
+                    SelectResult.Expression(Expression.Property(nameof(MachineDTO.Id)).From(MACHINES)),
+                    SelectResult.Expression(Expression.Property(nameof(MachineDTO.Label)).From(MACHINES)).As("Label"), // removing alias fix the issue
+                    SelectResult.Expression(Expression.Property(nameof(MachineDTO.ModelId)).From(MACHINES)),
+                    SelectResult.Expression(Expression.Property(nameof(ModelDTO.Label)).From(MODELS)).As("ModelLabel")
                 )
-                .From(DataSource.Database(db).As(Airlines.ALIAS))
+                .From(DataSource.Database(db).As(MACHINES))
                 .Join(
-                    Join.LeftJoin(DataSource.Database(db).As(Routes.ALIAS))
-                        .On(Expression.Property(nameof(AirlineDTO.Id)).From(Airlines.ALIAS)
-                            .EqualTo(Expression.Property(nameof(RouteDTO.AirlineId)).From(Routes.ALIAS))
+                    Join.LeftJoin(DataSource.Database(db).As(MODELS))
+                        .On(Expression.Property(nameof(ModelDTO.Id)).From(MODELS)
+                            .EqualTo(Expression.Property(nameof(MachineDTO.ModelId)).From(MACHINES))
                         )
                 )
             )
             {
-                var where = Expression.Property(nameof(RouteDTO.Type)).From(Routes.ALIAS).EqualTo(Expression.String(RouteDTO.TYPE))
-                    .And(Expression.Property(nameof(AirlineDTO.Type)).From(Airlines.ALIAS).EqualTo(Expression.String(AirlineDTO.TYPE)))
-                    .And(Expression.Property(nameof(RouteDTO.SourceAirport)).From(Routes.ALIAS).EqualTo(Expression.String("RIX")));
+                IExpression whereExpression = Expression.Property(nameof(MachineDTO.Type)).From(MACHINES)
+                    .EqualTo(Expression.String(MachineDTO.TYPE));
 
-                Console.WriteLine(query.Where(where).Explain());
-                var results = query.Where(where).Execute().AllResults();
+                whereExpression = whereExpression.And(
+                    Expression.Property(nameof(MachineDTO.Disabled))
+                    .From(MACHINES)
+                    .EqualTo(Expression.Boolean(false))
+                    .Or(
+                        Expression.Property(nameof(MachineDTO.Disabled))
+                        .From(MACHINES)
+                        .IsNotValued()
+                    )
+                );
+
+                Console.WriteLine(query.Where(whereExpression).Explain());
+
+                var results = query.Where(whereExpression).Execute().AllResults();
 
                 foreach (var result in results)
                 {
