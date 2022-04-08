@@ -41,7 +41,7 @@ namespace CouchbaseJoinBug
 
             routes.Add(new RouteDTO()
             {
-                Id = "route1",
+                Id = "route2",
                 AirlineId = airline1ID,
                 SourceAirport = "RIX",
                 DestinationAirport = "LAX"
@@ -49,7 +49,7 @@ namespace CouchbaseJoinBug
 
             routes.Add(new RouteDTO()
             {
-                Id = "route1",
+                Id = "route3",
                 AirlineId = airline2ID,
                 SourceAirport = "RIX",
                 DestinationAirport = "LYS"
@@ -67,7 +67,7 @@ namespace CouchbaseJoinBug
                 )
                 .From(DataSource.Database(db).As(Airlines.ALIAS))
                 .Join(
-                    Join.InnerJoin(DataSource.Database(db).As(Routes.ALIAS))
+                    Join.LeftJoin(DataSource.Database(db).As(Routes.ALIAS))
                         .On(Expression.Property(nameof(AirlineDTO.Id)).From(Airlines.ALIAS)
                             .EqualTo(Expression.Property(nameof(RouteDTO.AirlineId)).From(Routes.ALIAS))
                         )
@@ -78,7 +78,8 @@ namespace CouchbaseJoinBug
                     .And(Expression.Property(nameof(AirlineDTO.Type)).From(Airlines.ALIAS).EqualTo(Expression.String(AirlineDTO.TYPE)))
                     .And(Expression.Property(nameof(RouteDTO.SourceAirport)).From(Routes.ALIAS).EqualTo(Expression.String("RIX")));
 
-                var results = query.Execute().AllResults(); //.Where(where).Execute().AllResults();
+                Console.WriteLine(query.Where(where).Explain());
+                var results = query.Where(where).Execute().AllResults();
 
                 foreach (var result in results)
                 {

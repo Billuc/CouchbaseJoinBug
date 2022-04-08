@@ -6,8 +6,12 @@ namespace CouchbaseJoinBug
 
         public Couchbase.Lite.Database Database { get; set; }
 
-        public MyDatabase() {
-            Database = new Couchbase.Lite.Database(DBNAME);
+        public MyDatabase()
+        {
+            Database = new Couchbase.Lite.Database(DBNAME, new Couchbase.Lite.DatabaseConfiguration()
+            {
+                Directory = System.AppDomain.CurrentDomain.BaseDirectory
+            });
         }
     }
 }

@@ -21,7 +21,7 @@ namespace CouchbaseJoinBug
             //     return doc.Id;
             // }
 
-            using (var doc = dto.ToMutableDocument()) {
+            using (var doc = dto.ToMutableDocument(dto.Id)) {
                 _db.Save(doc);
             }
 

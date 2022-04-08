@@ -10,13 +10,15 @@ namespace CouchbaseJoinBug
 {
     public static class CouchbaseExtensions
     {
-        public static MutableDocument ToMutableDocument(this object obj, string id = null)
+        public static MutableDocument ToMutableDocument(this object obj, string id)
         {
             var objectAsJson = JsonSerializer.Serialize(obj);
 
             var deserializedObject = JsonSerializer.Deserialize<Dictionary<string, JsonElement>>(objectAsJson);
 
-            var document = (id == null) ? new MutableDocument() : new MutableDocument(id);
+            // var document = new MutableDocument(id, objectAsJson);
+
+            var document = new MutableDocument(id);
 
             foreach (var pair in deserializedObject)
             {
