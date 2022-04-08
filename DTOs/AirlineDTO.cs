@@ -5,7 +5,7 @@ namespace CouchbaseJoinBug
         public const string TYPE = "airline";
         
         public string Type => TYPE;
-        public string AirlineId { get; set; }
+        public string Id { get; set; }
         public string Name { get; set; }
         public string CallSign { get; set; }
     }

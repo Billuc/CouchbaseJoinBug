@@ -11,16 +11,22 @@ namespace CouchbaseJoinBug
         }
 
         public string Add(RouteDTO dto) {
-            using (var doc = new Couchbase.Lite.MutableDocument()) {
-                doc.SetString(nameof(RouteDTO.RouteId), dto.RouteId)
-                    .SetString(nameof(RouteDTO.Type), dto.Type)
-                    .SetString(nameof(RouteDTO.SourceAirport), dto.SourceAirport)
-                    .SetString(nameof(RouteDTO.DestinationAirport), dto.DestinationAirport)
-                    .SetString(nameof(RouteDTO.Airline), dto.Airline);
+            // using (var doc = new Couchbase.Lite.MutableDocument()) {
+            //     doc.SetString(nameof(RouteDTO.Id), dto.Id)
+            //         .SetString(nameof(RouteDTO.Type), dto.Type)
+            //         .SetString(nameof(RouteDTO.SourceAirport), dto.SourceAirport)
+            //         .SetString(nameof(RouteDTO.DestinationAirport), dto.DestinationAirport)
+            //         .SetString(nameof(RouteDTO.AirlineId), dto.AirlineId);
 
+            //     _db.Save(doc);
+            //     return doc.Id;
+            // }
+
+            using (var doc = dto.ToMutableDocument()) {
                 _db.Save(doc);
-                return doc.Id;
             }
+
+            return dto.Id;
         }
     }
 }

@@ -15,16 +15,16 @@ namespace CouchbaseJoinBug
 
             // Initializing airlines
 
-            airlines.Add(new AirlineDTO()
+            var airline1ID = airlines.Add(new AirlineDTO()
             {
-                AirlineId = "airline1",
+                Id = "airline1",
                 Name = "My First Airline",
                 CallSign = "CYF"
             });
 
-            airlines.Add(new AirlineDTO()
+            var airline2ID = airlines.Add(new AirlineDTO()
             {
-                AirlineId = "airline2",
+                Id = "airline2",
                 Name = "My Second Airline",
                 CallSign = "BGB"
             });
@@ -33,24 +33,24 @@ namespace CouchbaseJoinBug
 
             routes.Add(new RouteDTO()
             {
-                RouteId = "route1",
-                Airline = "airline2",
+                Id = "route1",
+                AirlineId = airline2ID,
                 SourceAirport = "LYS",
                 DestinationAirport = "LAX"
             });
 
             routes.Add(new RouteDTO()
             {
-                RouteId = "route1",
-                Airline = "airline1",
+                Id = "route1",
+                AirlineId = airline1ID,
                 SourceAirport = "RIX",
                 DestinationAirport = "LAX"
             });
 
             routes.Add(new RouteDTO()
             {
-                RouteId = "route1",
-                Airline = "airline2",
+                Id = "route1",
+                AirlineId = airline2ID,
                 SourceAirport = "RIX",
                 DestinationAirport = "LYS"
             });
@@ -63,23 +63,24 @@ namespace CouchbaseJoinBug
                     SelectResult.Expression(Expression.Property(nameof(AirlineDTO.CallSign)).From(Airlines.ALIAS)),
                     SelectResult.Expression(Expression.Property(nameof(RouteDTO.SourceAirport)).From(Routes.ALIAS)),
                     SelectResult.Expression(Expression.Property(nameof(RouteDTO.DestinationAirport)).From(Routes.ALIAS)),
-                    SelectResult.Expression(Expression.Property(nameof(RouteDTO.Airline)).From(Routes.ALIAS))
+                    SelectResult.Expression(Expression.Property(nameof(RouteDTO.AirlineId)).From(Routes.ALIAS))
                 )
                 .From(DataSource.Database(db).As(Airlines.ALIAS))
                 .Join(
-                    Join.LeftJoin(DataSource.Database(db).As(Routes.ALIAS))
-                        .On(Expression.Property(nameof(AirlineDTO.AirlineId)).From(Airlines.ALIAS)
-                            .EqualTo(Expression.Property(nameof(RouteDTO.Airline)).From(Routes.ALIAS))
+                    Join.InnerJoin(DataSource.Database(db).As(Routes.ALIAS))
+                        .On(Expression.Property(nameof(AirlineDTO.Id)).From(Airlines.ALIAS)
+                            .EqualTo(Expression.Property(nameof(RouteDTO.AirlineId)).From(Routes.ALIAS))
                         )
-                )
-                .Where(
-                    Expression.Property(nameof(RouteDTO.Type)).From(Routes.ALIAS).EqualTo(Expression.String(RouteDTO.TYPE))
-                        .And(Expression.Property(nameof(AirlineDTO.Type)).From(Airlines.ALIAS).EqualTo(Expression.String(AirlineDTO.TYPE)))
-                        .And(Expression.Property(nameof(RouteDTO.SourceAirport)).From(Routes.ALIAS).EqualTo(Expression.String("RIX")))
                 )
             )
             {
-                foreach (var result in query.Execute())
+                var where = Expression.Property(nameof(RouteDTO.Type)).From(Routes.ALIAS).EqualTo(Expression.String(RouteDTO.TYPE))
+                    .And(Expression.Property(nameof(AirlineDTO.Type)).From(Airlines.ALIAS).EqualTo(Expression.String(AirlineDTO.TYPE)))
+                    .And(Expression.Property(nameof(RouteDTO.SourceAirport)).From(Routes.ALIAS).EqualTo(Expression.String("RIX")));
+
+                var results = query.Execute().AllResults(); //.Where(where).Execute().AllResults();
+
+                foreach (var result in results)
                 {
                     Console.WriteLine($"===============================================");
 

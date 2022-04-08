@@ -11,15 +11,21 @@ namespace CouchbaseJoinBug
         }
 
         public string Add(AirlineDTO dto) {
-            using (var doc = new Couchbase.Lite.MutableDocument()) {
-                doc.SetString(nameof(AirlineDTO.AirlineId), dto.AirlineId)
-                    .SetString(nameof(AirlineDTO.Type), dto.Type)
-                    .SetString(nameof(AirlineDTO.Name), dto.Name)
-                    .SetString(nameof(AirlineDTO.CallSign), dto.CallSign);
+            // using (var doc = new Couchbase.Lite.MutableDocument()) {
+            //     doc.SetString(nameof(AirlineDTO.Id), dto.Id)
+            //         .SetString(nameof(AirlineDTO.Type), dto.Type)
+            //         .SetString(nameof(AirlineDTO.Name), dto.Name)
+            //         .SetString(nameof(AirlineDTO.CallSign), dto.CallSign);
 
+            //     _db.Save(doc);
+            //     return doc.Id;
+            // }
+
+            using (var doc = dto.ToMutableDocument()) {
                 _db.Save(doc);
-                return doc.Id;
             }
+
+            return dto.Id;
         }
     }
 }
